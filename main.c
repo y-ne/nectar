@@ -45,7 +45,9 @@ int main() {
   assert(system(cmd) == 0 && "scrcpy not found");
 
   int n = get_serials(serials);
-  for (int i = 0; i < n; i++)
-    printf("%s\n", serials[i]);
+  for (int i = 0; i < n; i++) {
+    snprintf(cmd, sizeof(cmd), "scrcpy -s %s -b 2M -m 1024", serials[i]);
+    system(cmd);
+  }
   return 0;
 }
