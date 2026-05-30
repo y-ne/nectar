@@ -52,26 +52,32 @@ int diff_devices(char serials[][MAX_SER], int n, char unmirrored[][MAX_SER]) {
 	return count;
 }
 
-int main() {
-	char serials[MAX_DEV][MAX_SER];
-	char cmd[128];
+void launch_scrcpy(const char *serial) {
+	char cmd[256];
+	snprintf(cmd, sizeof(cmd), "scrcpy -s %s -b 2M -m 1024", serial);
+	STARTUPINFO si = {0};
+	PROCESS_INFORMATION pi = {0};
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_SHOW;
+	CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL,
+				  &si, &pi);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+}
 
-	snprintf(cmd, sizeof(cmd), "adb --version >%s 2>&1", NUL);
-	assert(system(cmd) == 0 && "adb not found");
-	snprintf(cmd, sizeof(cmd), "scrcpy --version >%s 2>&1", NUL);
-	assert(system(cmd) == 0 && "scrcpy not found");
+int main() {
+	assert(system("adb --version >nul 2>&1") == 0 && "adb not found");
+	assert(system("scrcpy --version >nul 2>&1") == 0 && "scrcpy not found");
+
+	char serials[MAX_DEV][MAX_SER];
+	char unmirrored[MAX_DEV][MAX_SER];
 
 	for (;;) {
 		int n = get_serials(serials);
-		char unmirrored[MAX_DEV][MAX_SER];
 		int m = diff_devices(serials, n, unmirrored);
-
-		for (int i = 0; i < m; i++) {
-			snprintf(cmd, sizeof(cmd), "start scrcpy -s %s -b 2M -m 1024",
-					 unmirrored[i]);
-			system(cmd);
-		}
+		for (int i = 0; i < m; i++)
+			launch_scrcpy(unmirrored[i]);
 		Sleep(5000);
 	}
-	return 0;
 }
