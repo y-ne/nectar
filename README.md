@@ -10,4 +10,6 @@ I don't trust random Chinese software on my machine, but I needed something ligh
 
 ## Dev Notes
 
+Currently `Windows`-only. I'll work on `Linux` once I finish setting up my abandoned homelab.
+
 ¯\_(ツ)\_/¯
