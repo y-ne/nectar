@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 #define MAX_DEV 16
 #define MAX_SER 128
@@ -35,6 +36,21 @@ int get_serials(char serials[][MAX_SER]) {
   return n;
 }
 
+int diff_devices(char serials[][MAX_SER], int n, char unmirrored[][MAX_SER]) {
+  int count = 0;
+  char cmd[512];
+
+  for (int i = 0; i < n; i++) {
+    snprintf(cmd, sizeof(cmd),
+             "wmic process where \"name='scrcpy.exe'\" get commandline 2>%s | "
+             "findstr /c:\"%s\" >%s",
+             NUL, serials[i], NUL);
+    if (system(cmd) != 0)
+      strcpy(unmirrored[count++], serials[i]);
+  }
+  return count;
+}
+
 int main() {
   char serials[MAX_DEV][MAX_SER];
   char cmd[128];
@@ -44,10 +60,17 @@ int main() {
   snprintf(cmd, sizeof(cmd), "scrcpy --version >%s 2>&1", NUL);
   assert(system(cmd) == 0 && "scrcpy not found");
 
-  int n = get_serials(serials);
-  for (int i = 0; i < n; i++) {
-    snprintf(cmd, sizeof(cmd), "scrcpy -s %s -b 2M -m 1024", serials[i]);
-    system(cmd);
+  for (;;) {
+    int n = get_serials(serials);
+    char unmirrored[MAX_DEV][MAX_SER];
+    int m = diff_devices(serials, n, unmirrored);
+
+    for (int i = 0; i < m; i++) {
+      snprintf(cmd, sizeof(cmd), "start scrcpy -s %s -b 2M -m 1024",
+               unmirrored[i]);
+      system(cmd);
+    }
+    Sleep(5000);
   }
   return 0;
 }
